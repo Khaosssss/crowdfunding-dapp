@@ -13,6 +13,8 @@ export default function App() {
   const [account, setAccount] = useState("");
   const [campaignEnded, setCampaignEnded] = useState(false);
   const [raised, setRaised] = useState("0");
+  const [customAmount, setCustomAmount] = useState("0.01");
+
 
   const handleConnect = async () => {
     try {
@@ -27,31 +29,37 @@ export default function App() {
   };
 
   const checkDeadlineAndContribute = async () => {
-    try {
-      const contract = await getCrowdfundingContract();
-      for (let key in contract) {
-        if (typeof contract[key] === "function") {
-          console.log("Function in contract ABI:", key);
-        }
-      }
+  const contract = await getCrowdfundingContract();
+  const deadline = Number(await contract.deadline());
+  const now = Math.floor(Date.now() / 1000);
 
-      const deadline = await contract.deadline();
-      const now = Math.floor(Date.now() / 1000);
+  if (now >= deadline) {
+    toast.error("Campaign ended. No more contributions.");
+    return;
+  }
 
-      if (now >= deadline) {
-        toast.warning("The crowdfunding campaign has ended.");
-        return;
-      }
+  try {
+    const tx = await contract.contribute({
+      value: ethers.parseEther(customAmount),
+    });
 
-      const tx = await contract.contribute({ value: ethers.parseEther("0.01") });
-      await tx.wait();
-      toast.success("Contribution successful!");
-      await updateFundsRaised();
+    toast.promise(tx.wait(), {
+      loading: "Transaction pending...",
+      success: "Thanks for contributing!",
+      error: "Transaction failed",
+    });
 
-    } catch (error) {
-      toast.error(`Transaction failed: ${error?.reason || error?.message || "Unknown error"}`);
+    await tx.wait();
+
+    // ✅ Re-fetch totalRaised from contract
+    await updateFundsRaised();
+    } catch (err) {
+    console.error("Contribute error:", err);
+    toast.error("Failed to contribute.");
     }
   };
+
+
 
   const updateFundsRaised = async () => {
     try {
@@ -91,6 +99,15 @@ export default function App() {
 
         <CountdownTimer onCampaignEnd={setCampaignEnded} />
 
+        <input
+          type="number"
+          step="0.001"
+          min="0"
+          value={customAmount}
+          onChange={(e) => setCustomAmount(e.target.value)}
+          placeholder="Enter ETH amount"
+          className="w-full border rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
         {campaignEnded ? (
           <p className="text-lg font-semibold text-gray-500">Campaign ended</p>
         ) : (
@@ -98,9 +115,10 @@ export default function App() {
             onClick={checkDeadlineAndContribute}
             className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition"
           >
-            Contribute 0.01 ETH
+            Contribute {customAmount || "0"} ETH
           </button>
-        )}
+          )}
+
 
         <p className="text-lg font-medium text-gray-700">
           Total Raised: <span className="font-bold">{raised}</span> ETH
