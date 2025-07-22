@@ -32,7 +32,7 @@ A decentralized crowdfunding platform built with **React**, **Vite**, **Ethers.j
 ### 1. Clone the Repo
 
 ```bash
-git clone https://github.com/your-username/crowdfunding-dapp.git
+git clone https://github.com/Khaosssss/crowdfunding-dapp.git
 cd crowdfunding-dapp
 ```
 
