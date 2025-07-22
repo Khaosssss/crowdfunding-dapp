@@ -58,17 +58,40 @@ VITE_CONTRACT_ADDRESS=0xYourDeployedContractAddress
 
 ```solidity
 function contribute() external payable beforeDeadline {
-  require(msg.value > 0, "Contribution must be > 0");
-  contributions[msg.sender] += msg.value;
-  totalRaised += msg.value;
+        require(msg.value > 0, "Contribution must be > 0");
+        contributions[msg.sender] += msg.value;
+        totalRaised += msg.value;
 
-  emit ContributionReceived(msg.sender, msg.value);
+        emit ContributionReceived(msg.sender, msg.value);
 
-  if (totalRaised >= fundingGoal) {
-      goalReached = true;
-      emit GoalReached(totalRaised);
-  }
-}
+        if (totalRaised >= fundingGoal) {
+            goalReached = true;
+            emit GoalReached(totalRaised);
+        }
+    }
+
+    // Withdraw funds by owner if goal reached
+    function withdrawFunds() external onlyOwner afterDeadline {
+        require(goalReached, "Goal not reached");
+        require(!fundsWithdrawn, "Funds already withdrawn");
+
+        fundsWithdrawn = true;
+        payable(owner).transfer(address(this).balance);
+
+        emit FundsWithdrawn(owner, address(this).balance);
+    }
+
+    // Refund contributors if goal not reached
+    function refund() external afterDeadline {
+        require(!goalReached, "Goal was reached, no refunds");
+        uint contributed = contributions[msg.sender];
+        require(contributed > 0, "No contributions to refund");
+
+        contributions[msg.sender] = 0;
+        payable(msg.sender).transfer(contributed);
+
+        emit RefundIssued(msg.sender, contributed);
+    }
 ```
 
 > The contract tracks contributors, totalRaised amount, and whether the goal has been reached.
