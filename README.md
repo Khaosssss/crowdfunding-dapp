@@ -111,8 +111,11 @@ Integrated with `react-toastify` for better UX:
 This project is for demo and learning purposes.
 
 * ⚠️ Not production-ready.
-* ❌ No refund logic yet.
 * ✅ All interactions are done on testnet.
+* ⚠️ Refund Eligibility:
+  > Refunds can only be claimed **after the campaign ends**.
+  > The campaign must have **failed to meet the funding goal**.
+  > If the goal was reached, **refunds are not allowed**.
 
 ---
 
